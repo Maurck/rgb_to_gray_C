@@ -67,7 +67,7 @@ int main(int argc,char* argv[]) {
 
     // Guardado de nueva imagen
 
-    stbi_write_jpg(strcat(strcat(argv[1], "_gray"), argv[2]), width, height, gray_channels, gray_img, 100);
+    stbi_write_jpg(strcat(argv[1], ".bpm"), width, height, gray_channels, gray_img, 100);
 
     system("pause");
 }
