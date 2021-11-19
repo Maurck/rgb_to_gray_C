@@ -1,16 +1,18 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include <stdlib.h>
 #include <cstdint>
-#include <time.h>
+#include <omp.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image/stb_image_write.h"
 
-int main(int argc,char* argv[]) {
+int main(int argc, char* argv[]) {
 
-    int msec = 0;
-    clock_t before = clock();
+    double comienzoDeEjecucion, finalDeEjecucion, duracionTotal = 0;
+
+    comienzoDeEjecucion = omp_get_wtime();
 
     //Manejo de argumentos 
 
@@ -30,7 +32,7 @@ int main(int argc,char* argv[]) {
     }
     else
     {
-        printf("Ingrese 2 parametros (Nombre de la imagen, Extensión de la imagen)\n");
+        printf("Ingrese 2 parametros (Nombre de la imagen, Extensiï¿½n de la imagen)\n");
         exit(1);
     }
 
@@ -45,9 +47,9 @@ int main(int argc,char* argv[]) {
         exit(1);
     }
 
+    printf("Imagen cargada con un ancho de %dpx, un alto de %dpx y %d canales\n", width, height, channels);
 
-
-    // Reserva de memoria para transformación a gris
+    // Reserva de memoria para transformaciï¿½n a gris
 
     size_t img_size = width * height * channels;
     int gray_channels = channels == 4 ? 2 : 1;
@@ -58,14 +60,21 @@ int main(int argc,char* argv[]) {
         printf("No se pudo reservar memoria para la imagen gris.\n");
         exit(1);
     }
-    // Transformación a gris
 
+    // Transformaciï¿½n a gris
+
+    omp_set_num_threads(4);
+    int r, k, t;
+    double x = channels;
     unsigned char* pg = (unsigned char*)gray_img;
     unsigned char* p = img;
-
+    int counter = 0;
     int limit = width * height;
 
-    for (int counter = 0; counter < limit; counter++) {
+
+#pragma omp for
+    for (counter = 0; counter < limit; counter++) {
+        #pragma omp critical
         *pg = (uint8_t)((*p + *(p + 1) + *(p + 2)) / 3.0);
         if (channels == 4) {
             *(pg + 1) = *(p + 3);
@@ -76,14 +85,14 @@ int main(int argc,char* argv[]) {
         pg += gray_channels;
     }
 
+
     // Guardado de nueva imagen
 
     stbi_write_jpg(strcat(argv[1], ".bpm"), width, height, gray_channels, gray_img, 100);
 
-    clock_t difference = clock() - before;
-    msec = difference * 1000 / CLOCKS_PER_SEC;
-    printf("Tiempo total del programa: %d segundos y %d milisegundos\n", msec / 1000, msec % 1000);
+    finalDeEjecucion = omp_get_wtime();
+    duracionTotal = finalDeEjecucion - comienzoDeEjecucion;
+    printf("\nEl programa se ejecuta en paralelo %d\n", duracionTotal);
 
     system("pause");
 }
-
